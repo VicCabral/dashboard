@@ -1,0 +1,390 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <mat-toolbar color="primary">
+    <span class="mat-toolbar-title">E-Learning Analytics Dashboard</span>
+    <span class="toolbar-spacer"></span>
+    <button mat-icon-button aria-label="Exportar a Excel" (click)="exportToExcel()" matTooltip="Exportar a Excel">
+      <mat-icon>table_chart</mat-icon>
+    </button>
+    <button mat-icon-button aria-label="Compartir dashboard" (click)="shareDashboard()" matTooltip="Compartir dashboard">
+      <mat-icon>share</mat-icon>
+    </button>
+    <button mat-icon-button aria-label="Recargar datos" (click)="loadDashboardData()" matTooltip="Recargar datos">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <!-- Filtros -->
+  <div class="dashboard-filters">
+    <div class="filter-control">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Período Académico</mat-label>
+        <mat-select [(value)]="selectedPeriod">
+          <mat-option value="2025-1">2025-1</mat-option>
+          <mat-option value="2024-2">2024-2</mat-option>
+          <mat-option value="2024-1">2024-1</mat-option>
+          <mat-option value="2023-2">2023-2</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="filter-control">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Carrera</mat-label>
+        <mat-select [(value)]="selectedProgram">
+          <mat-option value="all">Todas las carreras</mat-option>
+          <mat-option value="ingenieria">Ingeniería</mat-option>
+          <mat-option value="medicina">Medicina</mat-option>
+          <mat-option value="derecho">Derecho</mat-option>
+          <mat-option value="economia">Economía</mat-option>
+          <mat-option value="humanidades">Humanidades</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="filter-control">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Tipo de Curso</mat-label>
+        <mat-select [(value)]="selectedCourseType">
+          <mat-option value="all">Todos los tipos</mat-option>
+          <mat-option value="obligatorio">Obligatorios</mat-option>
+          <mat-option value="electivo">Electivos</mat-option>
+          <mat-option value="complementario">Complementarios</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="filter-actions">
+      <button mat-raised-button class="action-button secondary" (click)="applyFilters()">
+        <mat-icon>filter_list</mat-icon> Aplicar Filtros
+      </button>
+      <button mat-raised-button class="action-button secondary" (click)="resetFilters()">
+        <mat-icon>refresh</mat-icon> Restablecer
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading spinner -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner></mat-spinner>
+    <p>Cargando datos del dashboard...</p>
+  </div>
+
+  <!-- Dashboard content -->
+  <div *ngIf="!loading" class="dashboard-content">
+    <!-- Stats Cards -->
+    <div class="stats-cards">
+      <mat-card *ngIf="generalStats" class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ generalStats.activeStudents }}</div>
+          <div class="stat-label">ESTUDIANTES ACTIVOS</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card *ngIf="generalStats" class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ generalStats.activeCourses }}</div>
+          <div class="stat-label">CURSOS ACTIVOS</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card *ngIf="generalStats" class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ generalStats.completionRate }}%</div>
+          <div class="stat-label">TASA DE FINALIZACIÓN</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card *ngIf="generalStats" class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ generalStats.averageGrade }}</div>
+          <div class="stat-label">PROMEDIO DE CALIFICACIÓN</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card *ngIf="generalStats" class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ generalStats.averageEngagement }}%</div>
+          <div class="stat-label">PARTICIPACIÓN PROMEDIO</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-container">
+      <!-- Row 1 -->
+      <div class="chart-row">
+        <!-- Course Completion Rate -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Tasa de Finalización por Carrera</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <app-bar-chart
+              *ngIf="courseCompletionData"
+              [data]="courseCompletionData">
+            </app-bar-chart>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Student Engagement -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Participación Estudiantil</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <app-line-chart
+              *ngIf="studentEngagementData"
+              [data]="studentEngagementData">
+            </app-line-chart>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="chart-row">
+        <!-- Resources Usage -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Uso de Recursos</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <app-pie-chart
+              *ngIf="resourcesUsageData"
+              [data]="resourcesUsageData">
+            </app-pie-chart>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Assessment Results -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Resultados de Evaluación</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <app-doughnut-chart
+              *ngIf="assessmentResultsData"
+              [data]="assessmentResultsData">
+            </app-doughnut-chart>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Row 3 (opcional) - Puedes añadir más gráficos aquí si lo deseas -->
+      <div class="chart-row">
+        <!-- Student Progress By Area -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Progreso Estudiantil por Área</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <app-radar-chart
+              *ngIf="studentProgressData"
+              [data]="studentProgressData">
+            </app-radar-chart>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Enrollment Trends -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Tendencias de Inscripción</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <app-bar-chart
+              *ngIf="enrollmentTrendsData"
+              [data]="enrollmentTrendsData">
+            </app-bar-chart>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Insights Section -->
+    <div class="insights-section">
+      <h2 class="section-title">Insights Clave</h2>
+
+      <div class="insights-cards">
+        <mat-card class="insight-card positive">
+          <mat-card-content>
+            <div class="insight-icon">
+              <mat-icon class="material-icons">trending_up</mat-icon>
+            </div>
+            <div class="insight-content">
+              <h3>Aumento en la participación</h3>
+              <p>Se observa un incremento del <strong>15%</strong> en la participación estudiantil respecto al período anterior.</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="insight-card warning">
+          <mat-card-content>
+            <div class="insight-icon">
+              <mat-icon class="material-icons">warning</mat-icon>
+            </div>
+            <div class="insight-content">
+              <h3>Atención requerida</h3>
+              <p>La carrera de <strong>Economía</strong> muestra una disminución del 5% en la tasa de finalización.</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="insight-card neutral">
+          <mat-card-content>
+            <div class="insight-icon">
+              <mat-icon class="material-icons">lightbulb</mat-icon>
+            </div>
+            <div class="insight-content">
+              <h3>Recomendación</h3>
+              <p>Aumentar recursos en video podría mejorar la participación estudiantil basado en el análisis de uso.</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Predictions Section -->
+    <div class="predictions-section">
+      <h2 class="section-title">Predicciones Académicas</h2>
+
+      <div class="predictions-row">
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Proyección de Inscripciones</mat-card-title>
+            <mat-card-subtitle>Próximos 3 períodos académicos</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <!-- Aquí iría el gráfico de proyección -->
+            <div class="prediction-info">
+              <div class="prediction-metric">
+                <span class="prediction-label">Próximo período:</span>
+                <span class="prediction-value">3,450 estudiantes</span>
+                <span class="prediction-change positive">+6.3%</span>
+              </div>
+              <div class="prediction-note">
+                <mat-icon>info</mat-icon>
+                <span>Predicción basada en tendencias históricas y factores estacionales</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Riesgo de Deserción</mat-card-title>
+            <mat-card-subtitle>Análisis predictivo de estudiantes en riesgo</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <!-- Aquí iría el gráfico de riesgo -->
+            <div class="risk-summary">
+              <div class="risk-group high">
+                <div class="risk-percentage">8%</div>
+                <div class="risk-label">Riesgo Alto</div>
+              </div>
+              <div class="risk-group medium">
+                <div class="risk-percentage">15%</div>
+                <div class="risk-label">Riesgo Medio</div>
+              </div>
+              <div class="risk-group low">
+                <div class="risk-percentage">77%</div>
+                <div class="risk-label">Riesgo Bajo</div>
+              </div>
+            </div>
+            <div class="action-recommendation">
+              <mat-icon>assignment_turned_in</mat-icon>
+              <span>Se recomienda intervención para 85 estudiantes identificados en alto riesgo</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Comparison Section -->
+    <div class="comparison-section">
+      <h2 class="section-title">Análisis Comparativo</h2>
+
+      <div class="comparison-row">
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Rendimiento por Modalidad</mat-card-title>
+            <mat-card-subtitle>Comparación entre educación presencial, híbrida y virtual</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <!-- Aquí iría el gráfico comparativo -->
+            <div class="comparison-table">
+              <table>
+                <thead>
+                <tr>
+                  <th>Modalidad</th>
+                  <th>Participación</th>
+                  <th>Finalización</th>
+                  <th>Calificación Promedio</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                  <td>Presencial</td>
+                  <td>85%</td>
+                  <td>92%</td>
+                  <td>8.5</td>
+                </tr>
+                <tr>
+                  <td>Híbrida</td>
+                  <td>78%</td>
+                  <td>85%</td>
+                  <td>8.2</td>
+                </tr>
+                <tr>
+                  <td>Virtual</td>
+                  <td>72%</td>
+                  <td>79%</td>
+                  <td>7.9</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="actions-section">
+      <h2 class="section-title">Acciones Recomendadas</h2>
+
+      <div class="action-cards">
+        <mat-card class="action-card">
+          <mat-card-content>
+            <div class="action-priority high">Alta prioridad</div>
+            <h3 class="action-title">Intervención académica en Economía</h3>
+            <p class="action-description">Implementar sesiones de refuerzo para estudiantes con bajo rendimiento en finanzas corporativas.</p>
+            <button mat-raised-button color="primary" class="action-button">Ver detalles</button>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="action-card">
+          <mat-card-content>
+            <div class="action-priority medium">Prioridad media</div>
+            <h3 class="action-title">Aumento de contenido multimedia</h3>
+            <p class="action-description">Crear más recursos en formato video para los cursos de ingeniería y medicina.</p>
+            <button mat-raised-button color="primary" class="action-button">Ver detalles</button>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="action-card">
+          <mat-card-content>
+            <div class="action-priority low">Prioridad baja</div>
+            <h3 class="action-title">Campaña de participación en foros</h3>
+            <p class="action-description">Promover mayor interacción en foros de discusión para humanidades.</p>
+            <button mat-raised-button color="primary" class="action-button">Ver detalles</button>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Botón flotante para exportar -->
+    <button mat-fab color="accent" class="export-fab" (click)="exportToPDF()" matTooltip="Exportar a PDF">
+      <mat-icon>picture_as_pdf</mat-icon>
+    </button>
+  </div>
+</div>
